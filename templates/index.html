@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --card: #16161f;
+      --border: #ffffff0f;
+      --border-strong: #ffffff1a;
+      --accent: #c8f135;
+      --accent-dim: #c8f13522;
+      --accent-hover: #d4ff3a;
+      --text: #f0f0f5;
+      --muted: #acacbc;
+      --danger: #ff5c5c;
+      --danger-dim: #ff5c5c18;
+      --success: #5cffa0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .logo-block h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: -1px;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .logo-block h1 span { color: var(--accent); }
+
+    .logo-block p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .total-badge { text-align: right; }
+
+    .total-badge .label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .total-badge .amount {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -1px;
+    }
+
+    /* SHARED SECTION CARD */
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .section-card.delay-1 { animation-delay: 0.1s; }
+    .section-card.delay-2 { animation-delay: 0.2s; }
+    .section-card.delay-3 { animation-delay: 0.25s; }
+    .section-card.delay-4 { animation-delay: 0.3s; }
+    .section-card.delay-5 { animation-delay: 0.35s; }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .icon-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* FORMS */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr 120px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .form-single {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .form-inline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 720px) {
+      .form-grid,
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-grid button,
+      .form-row button {
+        grid-column: span 2;
+      }
+      .form-single,
+      .form-inline { flex-direction: column; align-items: stretch; }
+    }
+
+    input[type="date"],
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="file"] {
+      cursor: pointer;
+      color: var(--muted);
+      padding: 8px 14px;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: var(--border-strong);
+      border: none;
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 4px 10px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+
+    /* PRIMARY BUTTON */
+    button[type="submit"] {
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 10px 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button[type="submit"]:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    button[type="submit"]:active { transform: translateY(0); }
+
+    /* LINK BUTTON */
+    .btn-link {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0a0f;
+      text-decoration: none;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 10px 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-link:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-link:active { transform: translateY(0); }
+
+    /* PREDICTION RESULT */
+    .prediction-result {
+      margin-top: 24px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .prediction-result .goal-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .prediction-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .prediction-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .pred-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .pred-stat .stat-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .pred-stat .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .pred-stat .stat-value.accent { color: var(--accent); }
+
+    .prediction-message {
+      font-size: 13px;
+      color: var(--muted);
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      line-height: 1.6;
+    }
+
+    /* CATEGORY PREDICTION RESULT */
+    .category-result {
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      border-left: 3px solid var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category-result .result-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .category-result .result-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-left: auto;
+    }
+
+    /* TABLE */
+    .table-section {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .clear-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--danger);
+      background: var(--danger-dim);
+      border: 1px solid var(--danger-dim);
+      border-radius: 6px;
+      padding: 6px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+      display: inline-block;
+    }
+
+    .clear-btn:hover {
+      background: #ff5c5c30;
+      border-color: #ff5c5c55;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 12px 24px;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #ffffff04; }
+
+    tbody td {
+      padding: 14px 24px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .td-date { color: var(--muted); font-size: 12px; }
+
+    .td-category {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .td-amount { color: var(--accent); font-weight: 500; }
+    .td-note { color: var(--muted); font-size: 12px; }
+
+    .empty-state { padding: 60px 24px; text-align: center; }
+    .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+
+    /* CHARTS */
+    .charts-section { animation: fadeUp 0.6s 0.45s ease both; }
+
+    .charts-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      overflow: hidden;
+      padding: 20px;
+    }
+
+    .chart-card img {
+      width: 100%;
+      border-radius: 8px;
+      display: block;
+      filter: saturate(0.9) brightness(0.95);
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-block">
+      <h1>EX<span>₹</span>ENSE</h1>
+      <p>Personal Finance Tracker</p>
+    </div>
+    <div class="total-badge">
+      <div class="label">Total Spent</div>
+      <div class="amount">₹{{ total }}</div>
+    </div>
+  </header>
+
+  <!-- ADD EXPENSE -->
+  <div class="section-card delay-1">
+    <div class="section-title"><span class="icon-dot"></span>New Entry</div>
+    <form action="/add" method="POST">
+      <div class="form-grid">
+        <input type="date" name="date" required />
+        <input type="text" name="category" placeholder="Category" required />
+        <input type="number" name="amount" placeholder="Amount" step="0.01" required />
+        <input type="text" name="note" placeholder="Note (optional)" />
+        <button type="submit">Add →</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- AI SAVINGS GOAL PREDICTOR -->
+  <div class="section-card delay-2">
+    <div class="section-title"><span class="icon-dot"></span>AI Savings Goal Predictor</div>
+    <form action="/predict_goal" method="POST">
+      <div class="form-row">
+        <input type="text" name="goal" placeholder="Goal name" required />
+        <input type="number" name="target" placeholder="Target amount (₹)" required />
+        <input type="number" name="saving" placeholder="Monthly saving (₹)" required />
+        <button type="submit">Predict →</button>
+      </div>
+    </form>
+
+    {% if prediction %}
+    <div class="prediction-result">
+      <div class="goal-name">{{ prediction.goal }}</div>
+      <div class="prediction-grid">
+        <div class="pred-stat">
+          <div class="stat-label">Target</div>
+          <div class="stat-value">₹{{ prediction.target }}</div>
+        </div>
+        <div class="pred-stat">
+          <div class="stat-label">Monthly Saving</div>
+          <div class="stat-value">₹{{ prediction.saving }}</div>
+        </div>
+        <div class="pred-stat">
+          <div class="stat-label">Estimated Time</div>
+          <div class="stat-value accent">{{ prediction.months }}mo</div>
+        </div>
+      </div>
+      <div class="prediction-message">{{ prediction.message }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- AI RECEIPT SCANNER -->
+  <div class="section-card delay-3">
+    <div class="section-title"><span class="icon-dot"></span>AI Receipt Scanner</div>
+    <form action="/scan_receipt" method="POST" enctype="multipart/form-data">
+      <div class="form-single">
+        <input type="file" name="receipt" accept="image/*" required />
+        <button type="submit">Scan →</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- AI EXPENSE RECOMMENDATION -->
+  <div class="section-card delay-4">
+    <div class="section-title"><span class="icon-dot"></span>AI Expense Recommendation</div>
+    <a href="/ai_recommendation" class="btn-link">Analyze Spending →</a>
+  </div>
+
+  <!-- AI CATEGORY PREDICTION -->
+  <div class="section-card delay-5">
+    <div class="section-title"><span class="icon-dot"></span>AI Category Prediction</div>
+    <form action="/predict_category" method="POST">
+      <div class="form-inline">
+        <input type="text" name="description" placeholder="Enter expense description" required />
+        <button type="submit">Predict →</button>
+      </div>
+    </form>
+
+    {% if predicted_category %}
+    <div class="category-result">
+      <div class="result-label">Predicted Category</div>
+      <div class="result-value">{{ predicted_category }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- TRANSACTIONS TABLE -->
+  <div class="table-section">
+    <div class="table-header">
+      <h2>Transactions</h2>
+      <a href="/clear" class="clear-btn" onclick="return confirm('Clear all expenses?')">Clear All</a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if data %}
+          {% for row in data %}
+          <tr>
+            <td class="td-date">{{ row[0] }}</td>
+            <td class="td-category">{{ row[1] }}</td>
+            <td class="td-amount">₹{{ row[2] }}</td>
+            <td class="td-note">{{ row[3] }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <div class="icon">📭</div>
+                <p>No expenses yet. Add one above.</p>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-section">
+    <div class="charts-label">📊 Analytics</div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <img src="{{ url_for('static', filename='charts/expense_pie_chart.png') }}?v={{ total }}" alt="Pie Chart" />
+      </div>
+      <div class="chart-card">
+        <img src="{{ url_for('static', filename='charts/category_expense.png') }}?v={{ total }}" alt="Bar Chart" />
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
